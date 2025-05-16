@@ -1,25 +1,33 @@
 using System;
 using System.Collections.Generic;
-using AYellowpaper.SerializedCollections;
 using UnityEngine;
 
-public abstract class BaseStateManager<EState> : MonoBehaviour where EState : Enum
-{
-    [SerializedDictionary] public Dictionary<EState, BaseState<EState>> States = new();
+public abstract class BaseStateManager<EState> : MonoBehaviour where EState : Enum {
+
+    [SerializeField] protected List<BaseState<EState>> States = new();
     protected BaseState<EState> CurrentState;
-    protected EState InitialState;
+    [SerializeField] protected EState InitialState;
+    protected ScriptableObject _context;
 
-    // protected bool isTransitioningState = false;
+    public void Init(ScriptableObject context) {
+        _context = context;
+    }
 
-    void Awake(){}
-    void Start(){
+    protected virtual void Start(){
+        //foreach (BaseState state in States) {
+        //    state.Init(_context);
+        //}
+        // gotta do this in the derived state machine
+
+        CurrentState = States.Find(s => s.StateKey.Equals(InitialState));
+
         CurrentState.EnterState();
     }
 
-    void Update(){
+    protected virtual void Update(){
         EState nextStateKey = CurrentState.GetNextState();
 
-        if (/*!isTransitioningState &&*/ nextStateKey.Equals(CurrentState.StateKey)){
+        if (nextStateKey.Equals(CurrentState.StateKey)){
             CurrentState.UpdateState();
         } else {
             TransitionToState(nextStateKey);
@@ -41,11 +49,9 @@ public abstract class BaseStateManager<EState> : MonoBehaviour where EState : En
     }
 
     void TransitionToState(EState stateKey){
-        // isTransitioningState = true;
         CurrentState.ExitState();
-        CurrentState = States[stateKey];
+        CurrentState = States.Find(s => s.StateKey.Equals(stateKey));
         CurrentState.EnterState();
-        // isTransitioningState = false;
     }
     
 
